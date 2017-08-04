@@ -1,0 +1,6 @@
+{
+  "bot_prefix" : "!",
+  "bot_token" : "You wish!",
+  "max_dice" : 10000,
+  "max_sides" : 10000
+}
