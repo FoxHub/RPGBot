@@ -78,12 +78,28 @@ async def on_ready():
 @client.command(pass_context=True)
 async def r(ctx):
     """
-    Roll the dice
+    Roll the dice!
 
-    Help documentation TBD.
+    This expression can handle basic multiplication, division, addition, and subtraction.
+    It can also handle exponentiation, if for some reason you need that.
+
+    To add a comment to the roll, add a # and then some words to the end of the line.
+
+    Examples:
+        /r 1d6
+        /r 1d20+12
+        /r 1d6x4+3d6
+        /r 7d6 #Archimedes launches a fireball!
     """
     orig_arg = ctx.message.content.replace(ctx.message.content.split()[0] + " ", '')
     # This string will be used to display individual dice rolls we get.
+    comment = orig_arg.split("#")
+    if len(comment) > 1:
+        # This will parse off a comment for appending later.
+        orig_arg = comment[0]
+        comment = "# " + comment[1]
+    else:
+        comment = " "
     dicestring = orig_arg
     # This one will be evaluated by eval().
     arg = orig_arg
@@ -100,7 +116,10 @@ async def r(ctx):
             await client.say("I refuse to roll more than {} dice!".format(max_dice))
             return
         if int(dicebase[1]) > max_sides:
-            await client.say("I refuse to roll marbles with more than {} sides!".format(max_sides))
+            await client.say("I refuse to roll marbles! Dice have a maximum of {} sides.".format(max_sides))
+            return
+        if int(dicebase[1]) < 1:
+            await client.say("Dice have at least one side.")
             return
         nums = dice.roll(diceroll)
         if len(nums) > 1:
@@ -123,7 +142,7 @@ async def r(ctx):
                 raise Exception("Evil input!")
                 break
         # We've filtered our input so this will only include harmless mathematical expressions.
-        result = "`{}` —> `{} = {}`".format(orig_arg, dicestring, int(eval(arg)))
+        result = "`{}` —> `{} = {} {}`".format(orig_arg, arg, int(eval(arg)), comment)
     except Exception:
         result = "Invalid input: `{}`".format(orig_arg)
     try:
