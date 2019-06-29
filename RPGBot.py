@@ -62,7 +62,7 @@ async def on_ready():
     """
     The output of this function signals that Fox-Bot is up and running.
     """
-    await client.change_presence(game=discord.Game(name='Pathfinder'))
+    await client.change_presence(activity=discord.Game(name='Pathfinder'))
     msg1 = "RPG-Bot is running as {}.\n".format(client.user.name)
     msg2 = "Our id is {}.\n".format(client.user.id)
     msg3 = "Invite link: https://discordapp.com/oauth2/authorize?client_id={}&scope=bot".format(client.user.id)
@@ -113,13 +113,13 @@ async def r(ctx):
     for diceroll in dicearr:
         dicebase = diceroll.split("d")
         if int(dicebase[0]) > max_dice:
-            await client.say("I refuse to roll more than {} dice!".format(max_dice))
+            await ctx.send("I refuse to roll more than {} dice!".format(max_dice))
             return
         if int(dicebase[1]) > max_sides:
-            await client.say("I refuse to roll marbles! Dice have a maximum of {} sides.".format(max_sides))
+            await ctx.send("I refuse to roll marbles! Dice have a maximum of {} sides.".format(max_sides))
             return
         if int(dicebase[1]) < 1:
-            await client.say("Dice have at least one side.")
+            await ctx.send("Dice have at least one side.")
             return
         nums = dice.roll(diceroll)
         if len(nums) > 1:
@@ -146,9 +146,9 @@ async def r(ctx):
     except Exception:
         result = "Invalid input: `{}`".format(orig_arg)
     try:
-        await client.say(result)
+        await ctx.send(result)
     except discord.errors.HTTPException:
-        await client.say("Why are you making me post such obscenely long numbers?")
+        await ctx.send("Why are you making me post such obscenely long numbers?")
 
 
 # =========================================================================== #
