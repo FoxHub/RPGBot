@@ -30,11 +30,12 @@ config = json.loads(config_data)
 
 # =========================================================================== #
 
+bot_intents = discord.Intents().all()
 bot_prefix = config['bot_prefix']
 bot_token = config['bot_token']
 max_dice = config['max_dice']
 max_sides = config['max_sides']
-client = commands.Bot(command_prefix=bot_prefix, description="A GM helping bot.")
+client = commands.Bot(command_prefix=bot_prefix, description="A GM helping bot.", intents=bot_intents)
 
 # =========================================================================== #
 

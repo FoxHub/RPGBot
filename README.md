@@ -2,7 +2,7 @@
 
 [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](http://opensource.org/licenses/MIT)
 
-(c) 2017 Sage Callon.
+(c) 2017~2022 Sage Callon.
 
 RPGBot is a game master's friend, written in Python 3.6.2. I designed
 it for personal purposes, but it should be well-commented enough to
