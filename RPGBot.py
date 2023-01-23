@@ -17,6 +17,7 @@ import json
 import re
 
 import discord
+from discord import app_commands
 from discord.ext import commands
 
 config_data = open('configs/config.json').read()
@@ -24,10 +25,8 @@ config = json.loads(config_data)
 
 # TODO:
 ''' 
-    o Tidy up roll function
     o Add loot generation
 '''
-
 # =========================================================================== #
 
 bot_intents = discord.Intents().all()
@@ -35,11 +34,32 @@ bot_prefix = config['bot_prefix']
 bot_token = config['bot_token']
 max_dice = config['max_dice']
 max_sides = config['max_sides']
-client = commands.Bot(command_prefix=bot_prefix, description="A GM helping bot.", intents=bot_intents)
+client = commands.Bot(command_prefix=bot_prefix, intents=bot_intents)
+
+roll_description = "Roll the dice! You can also provide a comment, which will be placed after your roll."
+dice_syntax_text = "What would you like to roll?"
+comment_text = "Descriptive text that goes after your result."
 
 # =========================================================================== #
 
-# Helper functions in this section
+
+@client.event
+async def on_ready():
+    """
+    The output of this function signals that Fox-Bot is up and running.
+    """
+    await client.change_presence(activity=discord.Game(name='Pathfinder'))
+    msg0 = "Syncing commands...\n"
+    try:
+        synced = await client.tree.sync()
+        msg1 = "RPG-Bot is running as {}.\n".format(client.user.name)
+        msg2 = "Our id is {}. Synced {} command(s).\n".format(client.user.id, len(synced))
+        msg3 = "Invite link: https://discordapp.com/oauth2/authorize?client_id={}&scope=bot&scope=applications.commands%20bot".format(client.user.id)
+        make_border(len(msg3))
+        print(msg0 + msg1 + msg2 + msg3)
+        make_border(len(msg3))
+    except Exception as e:
+        print(e)
 
 
 def make_border(length):
@@ -54,30 +74,22 @@ def make_border(length):
         str += '-'
     print(str)
 
-
 # =========================================================================== #
 
 
-@client.event
-async def on_ready():
-    """
-    The output of this function signals that Fox-Bot is up and running.
-    """
-    await client.change_presence(activity=discord.Game(name='Pathfinder'))
-    msg1 = "RPG-Bot is running as {}.\n".format(client.user.name)
-    msg2 = "Our id is {}.\n".format(client.user.id)
-    msg3 = "Invite link: https://discordapp.com/oauth2/authorize?client_id={}&scope=bot".format(client.user.id)
-    make_border(len(msg3))
-    print(msg1 + msg2 + msg3)
-    make_border(len(msg3))
+@client.tree.command(name="roll", description=roll_description)
+@app_commands.describe(dice_syntax=dice_syntax_text, comment=comment_text)
+async def roll(interaction: discord.Interaction, dice_syntax: str, comment: str = ''):
+    await roll_dice(interaction, dice_syntax, comment)
 
 
-# =========================================================================== #
-# Follows are the commands the bot accepts.
+@client.tree.command(name="r", description=roll_description)
+@app_commands.describe(dice_syntax=dice_syntax_text, comment=comment_text)
+async def r(interaction: discord.Interaction, dice_syntax: str, comment: str = ''):
+    await roll_dice(interaction, dice_syntax, comment)
 
 
-@client.command(pass_context=True)
-async def r(ctx):
+async def roll_dice(interaction: discord.Interaction, dice_syntax: str, comment:  str):
     """
     Roll the dice!
 
@@ -92,15 +104,12 @@ async def r(ctx):
         /r 1d6x4+3d6
         /r 7d6 #Archimedes launches a fireball!
     """
-    orig_arg = ctx.message.content.replace(ctx.message.content.split()[0] + " ", '')
+    await interaction.response.defer()
+    orig_arg = dice_syntax.replace(dice_syntax.split()[0] + " ", '')
     # This string will be used to display individual dice rolls we get.
-    comment = orig_arg.split("#")
     if len(comment) > 1:
         # This will parse off a comment for appending later.
-        orig_arg = comment[0]
-        comment = "# " + comment[1]
-    else:
-        comment = " "
+        comment = "# " + comment
     dicestring = orig_arg
     # This one will be evaluated by eval().
     arg = orig_arg
@@ -114,13 +123,13 @@ async def r(ctx):
     for diceroll in dicearr:
         dicebase = diceroll.split("d")
         if int(dicebase[0]) > max_dice:
-            await ctx.send("I refuse to roll more than {} dice!".format(max_dice))
+            await interaction.followup.send("I refuse to roll more than {} dice!".format(max_dice))
             return
         if int(dicebase[1]) > max_sides:
-            await ctx.send("I refuse to roll marbles! Dice have a maximum of {} sides.".format(max_sides))
+            await interaction.followup.send("I refuse to roll marbles! Dice have a maximum of {} sides.".format(max_sides))
             return
         if int(dicebase[1]) < 1:
-            await ctx.send("Dice have at least one side.")
+            await interaction.followup.send("Dice have at least one side.")
             return
         nums = dice.roll(diceroll)
         if len(nums) > 1:
@@ -141,19 +150,19 @@ async def r(ctx):
         for word in re.findall(r'[a-zA-Z_]\w+', arg):
             if word not in whitelist:
                 raise Exception("Evil input!")
-                break
         # We've filtered our input so this will only include harmless mathematical expressions.
         result = "`{}` —> `{} = {} {}`".format(orig_arg, arg, int(eval(arg)), comment)
     except Exception:
         result = "Invalid input: `{}`".format(orig_arg)
     try:
-        await ctx.send(result)
+        await interaction.followup.send(result)
+        return
     except discord.errors.HTTPException:
-        await ctx.send("Why are you making me post such obscenely long numbers?")
+        await interaction.followup.send("Why are you making me post such obscenely long numbers?")
 
 
 # =========================================================================== #
-# The final command here starts the bot. Nice and simple!
+# The final command here starts the bot.
 
 
 client.run(bot_token)
